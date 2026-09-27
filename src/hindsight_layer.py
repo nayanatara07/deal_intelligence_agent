@@ -8,6 +8,10 @@ from config import HINDSIGHT_API_KEY, HINDSIGHT_BASE_URL, HINDSIGHT_BANK_ID, HIN
 
 logger = logging.getLogger(__name__)
 
+# Single persistent event loop for all async Hindsight operations
+_loop = asyncio.new_event_loop()
+asyncio.set_event_loop(_loop)
+
 
 class HindsightLayer:
     """Wrapper around the Hindsight client for deal intelligence operations."""
@@ -24,7 +28,7 @@ class HindsightLayer:
     def _ensure_bank_exists(self):
         """Create the memory bank if it doesn't exist."""
         try:
-            asyncio.run(self.client.acreate_bank(
+            _loop.run_until_complete(self.client.acreate_bank(
                 bank_id=self.bank_id,
                 name="Deal Intelligence",
                 mission=HINDSIGHT_MISSION,
@@ -42,7 +46,7 @@ class HindsightLayer:
     def retain_call(self, deal_id: str, call_number: int, transcript: str, extracted_facts: dict):
         """Retain a call transcript and its extracted facts to Hindsight."""
         # Retain the full transcript
-        self.client.retain(
+        _loop.run_until_complete(self.client.aretain(
             bank_id=self.bank_id,
             content=transcript,
             context=f"Deal {deal_id} - Call {call_number} transcript",
@@ -52,12 +56,12 @@ class HindsightLayer:
                 "call_number": str(call_number),
                 "type": "transcript",
             },
-        )
+        ))
 
         # Retain each extracted fact as a separate memory
         # This makes retrieval much more precise
         for objection in extracted_facts.get("objections", []):
-            self.client.retain(
+            _loop.run_until_complete(self.client.aretain(
                 bank_id=self.bank_id,
                 content=f"Objection in deal {deal_id}, call {call_number}: {objection['text']}. Raised by: {objection.get('raised_by', 'unknown')}. Resolved: {objection.get('resolved', False)}. Tactic used: {objection.get('tactic_used', 'none')}",
                 context=f"Deal {deal_id} - Call {call_number} - Objection",
@@ -69,10 +73,10 @@ class HindsightLayer:
                     "raised_by": str(objection.get("raised_by", "")),
                     "resolved": str(objection.get("resolved", False)),
                 },
-            )
+            ))
 
         for competitor in extracted_facts.get("competitors", []):
-            self.client.retain(
+            _loop.run_until_complete(self.client.aretain(
                 bank_id=self.bank_id,
                 content=f"Competitor mentioned in deal {deal_id}, call {call_number}: {competitor['name']}. Context: {competitor.get('context', '')}. Outcome: {competitor.get('outcome', '')}",
                 context=f"Deal {deal_id} - Call {call_number} - Competitor",
@@ -83,10 +87,10 @@ class HindsightLayer:
                     "type": "competitor",
                     "name": str(competitor["name"]),
                 },
-            )
+            ))
 
         for stakeholder in extracted_facts.get("stakeholders", []):
-            self.client.retain(
+            _loop.run_until_complete(self.client.aretain(
                 bank_id=self.bank_id,
                 content=f"Stakeholder in deal {deal_id}: {stakeholder['name']}, role: {stakeholder.get('role', 'unknown')}. Sentiment in call {call_number}: {stakeholder.get('sentiment', 'neutral')}. Concerns: {stakeholder.get('concerns', '')}",
                 context=f"Deal {deal_id} - Call {call_number} - Stakeholder",
@@ -98,10 +102,10 @@ class HindsightLayer:
                     "name": str(stakeholder["name"]),
                     "sentiment": str(stakeholder.get("sentiment", "neutral")),
                 },
-            )
+            ))
 
         for pricing in extracted_facts.get("pricing", []):
-            self.client.retain(
+            _loop.run_until_complete(self.client.aretain(
                 bank_id=self.bank_id,
                 content=f"Pricing discussion in deal {deal_id}, call {call_number}: amount=${pricing.get('amount', 'unknown')}, discount={pricing.get('discount', 'none')}, approved={pricing.get('approved', 'unknown')}. Notes: {pricing.get('notes', '')}",
                 context=f"Deal {deal_id} - Call {call_number} - Pricing",
@@ -112,10 +116,10 @@ class HindsightLayer:
                     "type": "pricing",
                     "amount": str(pricing.get("amount", "")),
                 },
-            )
+            ))
 
         for tactic in extracted_facts.get("tactics", []):
-            self.client.retain(
+            _loop.run_until_complete(self.client.aretain(
                 bank_id=self.bank_id,
                 content=f"Tactic used in deal {deal_id}, call {call_number}: {tactic['description']}. Outcome: {tactic.get('outcome', 'unknown')}. Effectiveness: {tactic.get('effectiveness_score', 'unknown')}/5",
                 context=f"Deal {deal_id} - Call {call_number} - Tactic",
@@ -127,12 +131,12 @@ class HindsightLayer:
                     "outcome": str(tactic.get("outcome", "")),
                     "effectiveness_score": str(tactic.get("effectiveness_score", "")),
                 },
-            )
+            ))
 
         # Retain a summary of the call
         summary = extracted_facts.get("summary", "")
         if summary:
-            self.client.retain(
+            _loop.run_until_complete(self.client.aretain(
                 bank_id=self.bank_id,
                 content=f"Summary of deal {deal_id}, call {call_number}: {summary}",
                 context=f"Deal {deal_id} - Call {call_number} - Summary",
@@ -142,7 +146,7 @@ class HindsightLayer:
                     "call_number": str(call_number),
                     "type": "summary",
                 },
-            )
+            ))
 
         logger.info(f"Retained call {call_number} for deal {deal_id} to Hindsight")
 
@@ -162,12 +166,12 @@ class HindsightLayer:
         results = {}
         for key, query in queries.items():
             try:
-                response = self.client.recall(
+                response = _loop.run_until_complete(self.client.arecall(
                     bank_id=self.bank_id,
                     query=query,
                     max_tokens=2048,
                     budget="mid",
-                )
+                ))
                 results[key] = [r.text for r in response.results]
             except Exception as e:
                 logger.error(f"Error recalling {key} for deal {deal_id}: {e}")
@@ -182,12 +186,12 @@ class HindsightLayer:
             query += f" Additional context: {context}"
 
         try:
-            response = self.client.reflect(
+            response = _loop.run_until_complete(self.client.areflect(
                 bank_id=self.bank_id,
                 query=query,
                 budget="high",
                 context=f"Preparing for call {next_call_number} of deal {deal_id}",
-            )
+            ))
             return response.text
         except Exception as e:
             logger.error(f"Error generating briefing for deal {deal_id}: {e}")
@@ -196,12 +200,12 @@ class HindsightLayer:
     def recall_cross_deal_patterns(self, current_deal_id: str) -> list:
         """Recall patterns from other deals for cross-deal learning."""
         try:
-            response = self.client.recall(
+            response = _loop.run_until_complete(self.client.arecall(
                 bank_id=self.bank_id,
                 query=f"What objection-handling tactics have been successful in other deals? What patterns do you see across deals?",
                 max_tokens=2048,
                 budget="mid",
-            )
+            ))
             return [r.text for r in response.results]
         except Exception as e:
             logger.error(f"Error recalling cross-deal patterns: {e}")

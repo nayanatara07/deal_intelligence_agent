@@ -104,64 +104,64 @@ def get_connection():
 
 
 def insert_deal(deal_id, company, industry, value, stage, metadata=None):
-    """Insert a new deal."""
+    """Insert a new deal (or replace if exists)."""
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO deals (id, company, industry, value, stage, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO deals (id, company, industry, value, stage, created_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (deal_id, company, industry, value, stage, datetime.now().isoformat(), json.dumps(metadata) if metadata else None)
         )
 
 
 def insert_call(call_id, deal_id, call_number, call_date, transcript, summary=None):
-    """Insert a new call."""
+    """Insert a new call (or replace if exists)."""
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO calls (id, deal_id, call_number, call_date, transcript, summary) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO calls (id, deal_id, call_number, call_date, transcript, summary) VALUES (?, ?, ?, ?, ?, ?)",
             (call_id, deal_id, call_number, call_date, transcript, summary)
         )
 
 
 def insert_objection(objection_id, call_id, deal_id, text, raised_by=None, resolved=0, tactic_used=None):
-    """Insert an objection."""
+    """Insert an objection (or replace if exists)."""
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO objections (id, call_id, deal_id, text, raised_by, resolved, tactic_used) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO objections (id, call_id, deal_id, text, raised_by, resolved, tactic_used) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (objection_id, call_id, deal_id, text, raised_by, resolved, tactic_used)
         )
 
 
 def insert_competitor(competitor_id, call_id, deal_id, name, context=None, outcome=None):
-    """Insert a competitor mention."""
+    """Insert a competitor mention (or replace if exists)."""
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO competitors (id, call_id, deal_id, name, context, outcome) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO competitors (id, call_id, deal_id, name, context, outcome) VALUES (?, ?, ?, ?, ?, ?)",
             (competitor_id, call_id, deal_id, name, context, outcome)
         )
 
 
 def insert_pricing(pricing_id, call_id, deal_id, amount, discount=None, approved=None, notes=None):
-    """Insert a pricing discussion."""
+    """Insert a pricing discussion (or replace if exists)."""
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO pricing (id, call_id, deal_id, amount, discount, approved, notes) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO pricing (id, call_id, deal_id, amount, discount, approved, notes) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (pricing_id, call_id, deal_id, amount, discount, approved, notes)
         )
 
 
 def insert_tactic(tactic_id, call_id, deal_id, description, outcome=None, effectiveness_score=None):
-    """Insert a tactic."""
+    """Insert a tactic (or replace if exists)."""
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO tactics (id, call_id, deal_id, description, outcome, effectiveness_score) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO tactics (id, call_id, deal_id, description, outcome, effectiveness_score) VALUES (?, ?, ?, ?, ?, ?)",
             (tactic_id, call_id, deal_id, description, outcome, effectiveness_score)
         )
 
 
 def insert_stakeholder(stakeholder_id, deal_id, name, role=None, sentiment=None, concerns=None):
-    """Insert a stakeholder."""
+    """Insert a stakeholder (or replace if exists)."""
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO stakeholders (id, deal_id, name, role, sentiment, concerns) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO stakeholders (id, deal_id, name, role, sentiment, concerns) VALUES (?, ?, ?, ?, ?, ?)",
             (stakeholder_id, deal_id, name, role, sentiment, concerns)
         )
 

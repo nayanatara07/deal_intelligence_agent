@@ -4,7 +4,7 @@
 **"An AI that remembers every call in a deal so a rep never walks into call #5 unprepared."**
 
 ## Tech Stack
-- **Memory**: Hindsight (local server or Cloud)
+- **Memory**: Hindsight (local server)
 - **LLM**: Groq (`openai/gpt-oss-120b`)
 - **UI**: Streamlit
 - **Database**: SQLite
@@ -23,6 +23,7 @@
 deal_intelligence_agent/
 ├── app.py                 # Streamlit UI
 ├── seed.py                # Database seeding + Hindsight processing
+├── start-hindsight.bat    # Hindsight server launcher
 ├── requirements.txt       # Dependencies
 ├── .env / .env.example    # API keys config
 ├── plan.md                # This file
@@ -78,9 +79,20 @@ DATABASE_PATH=data/deals.db
 ```
 
 ### 6. Start Hindsight Server (Terminal 1)
+Create `start-hindsight.bat`:
+```bat
+@echo off
+set HINDSIGHT_API_LLM_API_KEY=your_groq_api_key
+set HINDSIGHT_API_LLM_BASE_URL=https://api.groq.com/openai/v1
+set HINDSIGHT_API_LLM_MODEL=openai/gpt-oss-120b
+hindsight-api
+```
+
+Or run in cmd.exe:
 ```cmd
 set HINDSIGHT_API_LLM_API_KEY=your_groq_api_key
 set HINDSIGHT_API_LLM_BASE_URL=https://api.groq.com/openai/v1
+set HINDSIGHT_API_LLM_MODEL=openai/gpt-oss-120b
 hindsight-api
 ```
 
@@ -138,9 +150,11 @@ https://github.com/nayanatara07/deal_intelligence_agent
 
 | Problem | Fix |
 |---------|-----|
+| `Cannot connect to localhost:8888` | Start Hindsight server in Terminal 1 |
+| `LLM API key is required` | Set `HINDSIGHT_API_LLM_API_KEY` in Terminal 1 |
+| `model gpt-4o-mini does not exist` | Set `HINDSIGHT_API_LLM_MODEL=openai/gpt-oss-120b` in Terminal 1 |
+| `UNIQUE constraint failed` | Fixed — all inserts use `INSERT OR REPLACE` |
+| `Event loop is closed` | Fixed — using persistent event loop |
+| `Timeout context manager` | Fixed — using `asyncio.run()` for all Hindsight calls |
 | `delete_deal_data` import error | Stop Streamlit, delete `src\__pycache__`, restart |
-| `UNIQUE constraint failed` | Click "Process with Hindsight" again (auto-cleans old data) |
-| `Cannot connect to localhost:8888` | Start Hindsight server first |
-| `LLM API key is required` | Set `HINDSIGHT_API_LLM_API_KEY` environment variable |
 | SSL/proxy errors with Hindsight Cloud | Use local Hindsight server instead |
-| `Remove-Item` not recognized | Use `rmdir /s /q` in cmd, or use PowerShell |
