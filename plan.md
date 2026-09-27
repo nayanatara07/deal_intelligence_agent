@@ -4,7 +4,7 @@
 **"An AI that remembers every call in a deal so a rep never walks into call #5 unprepared."**
 
 ## Tech Stack
-- **Memory**: Hindsight Cloud (Vectorize) — `https://api.hindsight.vectorize.io`
+- **Memory**: Hindsight (local server or Cloud)
 - **LLM**: Groq (`openai/gpt-oss-120b`)
 - **UI**: Streamlit
 - **Database**: SQLite
@@ -37,40 +37,69 @@ deal_intelligence_agent/
     └── synthetic_data.py  # Synthetic deal data
 ```
 
-## How to Run
+## Setup Instructions
 
-1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 1. Clone the repo
+```bash
+git clone https://github.com/nayanatara07/deal_intelligence_agent.git
+cd deal_intelligence_agent
+```
 
-2. **Configure `.env`:**
-   ```env
-   HINDSIGHT_API_KEY=your_hindsight_api_key
-   HINDSIGHT_BASE_URL=https://api.hindsight.vectorize.io
-   GROQ_API_KEY=your_groq_api_key
-   ```
+### 2. Create virtual environment
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
 
-3. **Seed database:**
-   ```bash
-   python seed.py
-   ```
+### 3. Install dependencies
+```bash
+pip install -r requirements.txt
+pip install hindsight-api
+```
 
-4. **Run app:**
-   ```bash
-   streamlit run app.py
-   ```
+### 4. Get API Keys
+- **Groq**: https://console.groq.com → free tier, no credit card needed
+- **Hindsight**: https://ui.hindsight.vectorize.io → use promo code `MEMHACK99` for $50 free credits
 
-5. **In the app:**
-   - Click "Seed Database"
-   - Select a deal (e.g., Acme Corp)
-   - Click "Process with Hindsight"
-   - Go to "Pre-Call Briefing" tab
-   - Click "Generate Briefing with Memory"
+### 5. Configure `.env`
+Copy `.env.example` to `.env` and fill in:
+```env
+# Hindsight (local server)
+HINDSIGHT_API_KEY=your_hindsight_api_key
+HINDSIGHT_BASE_URL=http://localhost:8888
+HINDSIGHT_BANK_ID=deal-intelligence
+
+# Groq
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=openai/gpt-oss-120b
+
+# Database
+DATABASE_PATH=data/deals.db
+```
+
+### 6. Start Hindsight Server (Terminal 1)
+```cmd
+set HINDSIGHT_API_LLM_API_KEY=your_groq_api_key
+set HINDSIGHT_API_LLM_BASE_URL=https://api.groq.com/openai/v1
+hindsight-api
+```
+
+### 7. Run the App (Terminal 2)
+```bash
+streamlit run app.py
+```
+
+### 8. Use the App
+1. Click **"Seed Database"** in the sidebar
+2. Select **"Nexus Analytics"** from the dropdown
+3. Click **"Process with Hindsight"** — extracts facts from all calls and stores in memory
+4. Go to **"Pre-Call Briefing"** tab
+5. Click **"Generate Briefing with Memory"** — see what the agent remembers
+6. Click **"Generate Briefing WITHOUT Memory"** — compare with generic advice
 
 ## Demo Flow (60-90 seconds)
 
-1. **Set the scene (10s):** "You're an AE. You've had 4 calls with Acme Corp — a $250K HR software deal. It's 5 minutes before call 5."
+1. **Set the scene (10s):** "You're an AE. You've had 4 calls with Nexus Analytics — a $250K HR tech deal. It's 5 minutes before call 5."
 
 2. **Show the brief (20s):** Click "Generate Briefing with Memory" — surface a specific remembered detail (e.g., "Priya raised a security concern in call 2 that was never followed up on").
 
@@ -84,10 +113,10 @@ deal_intelligence_agent/
 
 | Deal | Company | Value | Stage | Calls |
 |------|---------|-------|-------|-------|
-| Hero | Acme Corp | $250K | Negotiation | 5 |
-| Background | TechCorp | $180K | Closed Won | 3 |
-| Background | RetailMax | $320K | Closed Won | 3 |
-| Background | HealthFirst | $450K | Closed Lost | 3 |
+| Hero | Nexus Analytics | $250K | Negotiation | 5 |
+| Background | Vertex Solutions | $180K | Closed Won | 3 |
+| Background | Aurora Retail Group | $320K | Closed Won | 3 |
+| Background | Pinnacle Health | $450K | Closed Lost | 3 |
 
 ## Key Features
 
@@ -102,26 +131,16 @@ deal_intelligence_agent/
 - [ ] LinkedIn post — per team member
 - [ ] Demo video (2-5 min) — one per team
 
-## GitHub Setup
+## GitHub Repo
+https://github.com/nayanatara07/deal_intelligence_agent
 
-```bash
-cd C:\Users\USER\source\repos\deal_intelligence_agent
-git init
-git add .
-git commit -m "Deal Intelligence Agent - Hindsight memory for sales calls"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/deal_intelligence_agent.git
-git push -u origin main
-```
+## Troubleshooting
 
-## Timeline
-
-| Phase | Time | Status |
-|-------|------|--------|
-| Setup | Hr 0-2 | Done |
-| Data | Hr 2-5 | Done |
-| Core pipeline | Hr 5-14 | Done |
-| UI | Hr 14-18 | Done |
-| Cross-deal learning | Hr 18-24 | Done |
-| Polish + demo | Hr 24-30 | In Progress |
-| Content deliverables | Hr 30+ | Pending |
+| Problem | Fix |
+|---------|-----|
+| `delete_deal_data` import error | Stop Streamlit, delete `src\__pycache__`, restart |
+| `UNIQUE constraint failed` | Click "Process with Hindsight" again (auto-cleans old data) |
+| `Cannot connect to localhost:8888` | Start Hindsight server first |
+| `LLM API key is required` | Set `HINDSIGHT_API_LLM_API_KEY` environment variable |
+| SSL/proxy errors with Hindsight Cloud | Use local Hindsight server instead |
+| `Remove-Item` not recognized | Use `rmdir /s /q` in cmd, or use PowerShell |

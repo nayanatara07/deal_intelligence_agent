@@ -3,8 +3,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
-import nest_asyncio
-nest_asyncio.apply()
+
 
 import streamlit as st
 from database import (

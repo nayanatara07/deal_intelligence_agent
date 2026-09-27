@@ -1,4 +1,5 @@
 """Hindsight memory integration layer."""
+import asyncio
 import json
 import logging
 from typing import Optional
@@ -23,7 +24,7 @@ class HindsightLayer:
     def _ensure_bank_exists(self):
         """Create the memory bank if it doesn't exist."""
         try:
-            self.client.create_bank(
+            asyncio.run(self.client.acreate_bank(
                 bank_id=self.bank_id,
                 name="Deal Intelligence",
                 mission=HINDSIGHT_MISSION,
@@ -32,7 +33,7 @@ class HindsightLayer:
                     "literalism": 3,
                     "empathy": 4,
                 },
-            )
+            ))
             logger.info(f"Created Hindsight bank: {self.bank_id}")
         except Exception as e:
             # Bank likely already exists
